@@ -7,6 +7,7 @@ pub const Kind = enum { empty, O, I, S, Z, L, J, T };
 const outline_width = 1;
 
 kind: Kind = .empty,
+is_floating: bool = false,
 
 pub const empty: @This() = .{};
 

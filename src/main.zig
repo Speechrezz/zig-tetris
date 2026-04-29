@@ -2,6 +2,7 @@ const std = @import("std");
 const Io = std.Io;
 
 const rl = @import("raylib");
+const Game = @import("Game.zig");
 const Board = @import("Board.zig");
 
 pub fn main(init: std.process.Init) !void {
@@ -12,8 +13,21 @@ pub fn main(init: std.process.Init) !void {
     _ = io;
 
     var board: Board = .init();
-    board.blocks[40] = .{ .kind = .I };
-    board.blocks[41] = .{ .kind = .S };
+    var game: Game = .init(&board);
+
+    board.atPos(0, 20).* = .{ .kind = .I };
+
+    game.floating_blocks = [_]usize{undefined} ** 4;
+    game.floating_blocks = .{
+        Board.idxFromPos(1, 10),
+        Board.idxFromPos(2, 10),
+        Board.idxFromPos(1, 11),
+        Board.idxFromPos(2, 11),
+    };
+
+    for (game.floating_blocks.?) |idx| {
+        board.blocks[idx] = .{ .kind = .O, .is_floating = true };
+    }
 
     // ---Raylib---
 
@@ -30,13 +44,12 @@ pub fn main(init: std.process.Init) !void {
     // Main game loop
     while (!rl.windowShouldClose()) {
         // ---Game logic---
-        // TODO
+        const delta_time = rl.getFrameTime();
+        game.update(delta_time);
 
         // ---Draw---
         rl.beginDrawing();
         defer rl.endDrawing();
-        const delta_time = rl.getFrameTime();
-        _ = delta_time;
 
         rl.clearBackground(.black);
         board.draw(0, 0);
