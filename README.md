@@ -1,6 +1,6 @@
 # Zig Tetris
 
-A casual remake of Tetris using Zig + Raylib.
+A casual remake of Tetris using Zig (0.16) + Raylib (6).
 
 ## Building
 
