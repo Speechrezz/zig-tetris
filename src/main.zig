@@ -9,11 +9,29 @@ const Board = @import("Board.zig");
 const NextDisplay = @import("NextDisplay.zig");
 const ScoreDisplay = @import("ScoreDisplay.zig");
 
+const screen_bounds: core.Rectangle = .{
+    .x = 0,
+    .y = 0,
+    .width = 632,
+    .height = 968,
+};
+
 pub fn main(init: std.process.Init) !void {
     std.debug.print("Welcome to Zig Tetris!", .{});
 
     const rng_impl: std.Random.IoSource = .{ .io = init.io };
     const rng = rng_impl.interface();
+
+    // ---Init---
+
+    const header_bounds: core.Rectangle = .{
+        .x = screen_bounds.width / 2 - 200,
+        .y = 32,
+        .width = 400,
+        .height = 32,
+    };
+
+    const game_over_bounds = screen_bounds.withSizeKeepingCenter(320, 120).translated(0, -128);
 
     var board: Board = .init(.{ .x = 32, .y = 128 });
     var next_display: NextDisplay = .init(.{
@@ -34,31 +52,22 @@ pub fn main(init: std.process.Init) !void {
 
     // ---Raylib---
 
-    const screen_bounds: core.Rectangle = .{ .x = 0, .y = 0, .width = 632, .height = 1000 - 32 };
-    const screen_width = 632;
-    const screen_height = 1000 - 32;
-    const header_bounds: core.Rectangle = .{
-        .x = screen_width / 2 - 200,
-        .y = 32,
-        .width = 400,
-        .height = 32,
-    };
-    const game_over_bounds = screen_bounds.withSizeKeepingCenter(320, 120).translated(0, -128);
-
-    rl.initWindow(screen_width, screen_height, "Zig Tetris");
+    rl.initWindow(screen_bounds.width, screen_bounds.height, "Zig Tetris");
     defer rl.closeWindow();
 
     const refresh_rate = rl.getMonitorRefreshRate(0);
     std.debug.print("Refresh rate: {}\n", .{refresh_rate});
     rl.setTargetFPS(refresh_rate);
 
-    // Main game loop
     while (!rl.windowShouldClose()) {
+
         // ---Game logic---
+
         const delta_time = rl.getFrameTime();
         game.update(delta_time);
 
         // ---Draw---
+
         rl.beginDrawing();
         defer rl.endDrawing();
 
