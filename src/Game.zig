@@ -4,6 +4,7 @@ const core = @import("core.zig");
 const Board = @import("Board.zig");
 const Tetromino = @import("Tetromino.zig");
 const NextDisplay = @import("NextDisplay.zig");
+const ScoreDisplay = @import("ScoreDisplay.zig");
 const SevenBag = @import("SevenBag.zig");
 
 const TetrominoKind = core.TetrominoKind;
@@ -15,26 +16,35 @@ const GameState = enum {
 };
 
 const fast_drop_period = 0.04;
+const lines_cleared_per_level = 10;
 
 state: GameState = .playing,
 
 seven_bag: SevenBag,
 board: *Board,
 next_display: *NextDisplay,
+score_display: *ScoreDisplay,
+
 drop_period: f32 = 1.0, // In seconds
 time_passed: f32 = 0.0, // In seconds
+lines_cleared: usize = 0,
 
-pub fn init(rng: std.Random, board: *Board, next_display: *NextDisplay) @This() {
+pub fn init(rng: std.Random, board: *Board, next_display: *NextDisplay, score_display: *ScoreDisplay) @This() {
     return .{
         .seven_bag = .{ .rng = rng },
         .board = board,
         .next_display = next_display,
+        .score_display = score_display,
     };
 }
 
 pub fn startPlaying(self: *@This()) void {
     self.state = .playing;
     self.board.reset();
+    self.score_display.reset();
+    self.lines_cleared = 0;
+    self.drop_period = dropPeriodFromLevel(self.score_display.level);
+
     self.next_display.tetromino = .create(self.chooseNextTetromino());
     _ = self.spawnNewTetromino(self.chooseNextTetromino());
 }
@@ -42,9 +52,11 @@ pub fn startPlaying(self: *@This()) void {
 pub fn update(self: *@This(), delta_time: f32) void {
     self.handleInput();
 
+    const soft_drop = rl.isKeyDown(.down);
+
     // Move pieces down
     self.time_passed += delta_time;
-    const drop_period = if (rl.isKeyDown(.down)) fast_drop_period else self.drop_period;
+    const drop_period = if (soft_drop) fast_drop_period else self.drop_period;
 
     if (rl.isKeyPressed(.down)) {
         self.time_passed = fast_drop_period;
@@ -55,6 +67,10 @@ pub fn update(self: *@This(), delta_time: f32) void {
 
         if (self.board.active_tetromino) |*active_tetromino| {
             self.moveDown(active_tetromino);
+
+            if (soft_drop) {
+                self.score_display.addScore(1);
+            }
         }
     }
 }
@@ -86,12 +102,44 @@ fn chooseNextTetromino(self: *@This()) TetrominoKind {
     return @enumFromInt(rand);
 }
 
+fn dropPeriodFromLevel(level: usize) f32 {
+    const l: f32 = @floatFromInt(level - 1);
+    return std.math.pow(f32, 0.8 - l * 0.007, l);
+}
+
+fn incrementLevel(self: *@This()) void {
+    if (self.score_display.level >= 15) return;
+
+    self.score_display.incrementLevel();
+    self.drop_period = dropPeriodFromLevel(self.score_display.level);
+}
+
 fn tetrominoPlaced(self: *@This()) void {
+    var rows_cleared: usize = 0;
     for (0..Board.board_height) |row| {
         const idx = Board.idxFromRow(row);
         if (self.board.isRowFull(idx)) {
+            rows_cleared += 1;
             const offset = Board.board_width;
             @memmove(self.board.blocks[offset .. idx + offset], self.board.blocks[0..idx]);
+        }
+    }
+
+    if (rows_cleared > 0) {
+        const score: usize = switch (rows_cleared) {
+            1 => 100,
+            2 => 300,
+            3 => 500,
+            4 => 800,
+            else => unreachable,
+        };
+
+        self.score_display.addScore(self.score_display.level * score);
+
+        self.lines_cleared += rows_cleared;
+        if (self.lines_cleared >= lines_cleared_per_level) {
+            self.lines_cleared -= lines_cleared_per_level;
+            self.incrementLevel();
         }
     }
 

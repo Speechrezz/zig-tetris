@@ -29,6 +29,16 @@ pub const Rectangle = struct {
     width: i32 = 0,
     height: i32 = 0,
 
+    pub fn removeFromTop(self: *@This(), pixels: i32) @This() {
+        var removed = self.*;
+        removed.height = pixels;
+
+        self.y += pixels;
+        self.height -= pixels;
+
+        return removed;
+    }
+
     pub fn getCenterX(self: @This()) i32 {
         return self.x + @divTrunc(self.width, 2);
     }

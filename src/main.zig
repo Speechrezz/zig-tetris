@@ -7,6 +7,7 @@ const drawing = @import("drawing.zig");
 const Game = @import("Game.zig");
 const Board = @import("Board.zig");
 const NextDisplay = @import("NextDisplay.zig");
+const ScoreDisplay = @import("ScoreDisplay.zig");
 
 pub fn main(init: std.process.Init) !void {
     std.debug.print("Welcome to Zig Tetris!", .{});
@@ -21,8 +22,14 @@ pub fn main(init: std.process.Init) !void {
         .width = 196,
         .height = 196,
     });
+    var score_display: ScoreDisplay = .init(.{
+        .x = 400,
+        .y = 400,
+        .width = 196,
+        .height = 196,
+    });
 
-    var game: Game = .init(rng, &board, &next_display);
+    var game: Game = .init(rng, &board, &next_display, &score_display);
     game.startPlaying();
 
     // ---Raylib---
@@ -59,6 +66,7 @@ pub fn main(init: std.process.Init) !void {
         drawing.drawTextCentered("ZIG TETRIS", header_bounds, 32, .white);
         board.draw();
         next_display.draw();
+        score_display.draw();
 
         if (game.state == .game_over) {
             rl.drawRectangle(game_over_bounds.x, game_over_bounds.y, game_over_bounds.width, game_over_bounds.height, .black);
