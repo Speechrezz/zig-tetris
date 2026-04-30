@@ -3,19 +3,39 @@ const rl = @import("raylib");
 const core = @import("core.zig");
 const Board = @import("Board.zig");
 const Tetromino = @import("Tetromino.zig");
+const NextDisplay = @import("NextDisplay.zig");
+
+const TetrominoKind = core.TetrominoKind;
+const GameState = enum {
+    main_menu,
+    playing,
+    game_over,
+    paused,
+};
 
 const fast_drop_period = 0.04;
 
+state: GameState = .playing,
+
 rng: std.Random,
 board: *Board,
+next_display: *NextDisplay,
 drop_period: f32 = 1.0, // In seconds
 time_passed: f32 = 0.0, // In seconds
 
-pub fn init(rng: std.Random, board: *Board) @This() {
+pub fn init(rng: std.Random, board: *Board, next_display: *NextDisplay) @This() {
     return .{
         .rng = rng,
         .board = board,
+        .next_display = next_display,
     };
+}
+
+pub fn startPlaying(self: *@This()) void {
+    self.state = .playing;
+    self.board.reset();
+    self.next_display.tetromino = .create(self.chooseNextTetromino());
+    _ = self.spawnNewTetromino(self.chooseNextTetromino());
 }
 
 pub fn update(self: *@This(), delta_time: f32) void {
@@ -54,21 +74,9 @@ fn handleInput(self: *@This()) void {
     }
 }
 
-pub fn spawnNewTetromino(self: *@This()) void {
+fn chooseNextTetromino(self: *const @This()) TetrominoKind {
     const rand = self.rng.intRangeLessThan(i32, 1, core.TetrominoKinds);
-    const kind: core.TetrominoKind = @enumFromInt(rand);
-    std.debug.print("rand={}, kind={}\n", .{ kind, rand });
-
-    var tetromino: Tetromino = .create(kind);
-    // const center_x = @divTrunc(tetromino.center_point.x, 2);
-    tetromino.board_offset.x = @divTrunc(Board.board_width, 2);
-
-    const positions = tetromino.computeBoardPositions();
-    if (self.hasTetrominoCollided(positions, 0, 0)) {
-        std.debug.print("TODO: GAME OVER!\n", .{});
-    }
-
-    self.board.active_tetromino = tetromino;
+    return @enumFromInt(rand);
 }
 
 fn tetrominoPlaced(self: *@This()) void {
@@ -80,7 +88,27 @@ fn tetrominoPlaced(self: *@This()) void {
         }
     }
 
-    self.spawnNewTetromino();
+    const next_kind = self.next_display.tetromino.?.kind;
+    self.next_display.tetromino = .create(self.chooseNextTetromino());
+
+    if (!self.spawnNewTetromino(next_kind)) {
+        self.state = .game_over;
+    }
+}
+
+fn spawnNewTetromino(self: *@This(), kind: TetrominoKind) bool {
+    var tetromino: Tetromino = .create(kind);
+    const center_x = tetromino.center_point.x + 1;
+    tetromino.board_offset.x = @divTrunc(Board.board_width - center_x, 2);
+
+    const positions = tetromino.computeBoardPositions();
+    if (self.hasTetrominoCollided(positions, 0, 0)) {
+        self.board.active_tetromino = null;
+        return false;
+    }
+
+    self.board.active_tetromino = tetromino;
+    return true;
 }
 
 fn hasTetrominoCollided(self: *@This(), positions: Tetromino.Positions, x_offset: i32, y_offset: i32) bool {

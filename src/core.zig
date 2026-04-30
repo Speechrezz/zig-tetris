@@ -23,6 +23,20 @@ pub const Position = struct {
     y: i32 = 0,
 };
 
+pub const Rectangle = struct {
+    x: i32 = 0,
+    y: i32 = 0,
+    width: i32 = 0,
+    height: i32 = 0,
+
+    pub fn getCenterX(self: @This()) i32 {
+        return self.x + @divTrunc(self.width, 2);
+    }
+    pub fn getCenterY(self: @This()) i32 {
+        return self.y + @divTrunc(self.height, 2);
+    }
+};
+
 pub const TetrominoKind = enum {
     nil,
     O,

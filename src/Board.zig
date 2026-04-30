@@ -1,6 +1,7 @@
 const std = @import("std");
 const rl = @import("raylib");
 const core = @import("core.zig");
+const block = @import("block.zig");
 const Tetromino = @import("Tetromino.zig");
 
 const Position = core.Position;
@@ -9,10 +10,10 @@ const TetrominoKind = core.TetrominoKind;
 
 pub const board_width = 10;
 pub const board_height = 25;
-pub const block_size = 32;
+pub const block_size = block.size;
 pub const block_count = board_width * board_height;
 
-const outline_width = 1;
+const outline_width = block.outline_width;
 const pixel_width = board_width * block_size + 2 * outline_width;
 const pixel_height = board_height * block_size + 2 * outline_width;
 
@@ -24,6 +25,11 @@ pub fn init(board_pos: Position) @This() {
     return .{
         .pos = board_pos,
     };
+}
+
+pub fn reset(self: *@This()) void {
+    self.blocks = [_]TetrominoKind{.nil} ** block_count;
+    self.active_tetromino = null;
 }
 
 pub fn draw(self: *const @This()) void {
@@ -49,8 +55,8 @@ pub fn draw(self: *const @This()) void {
             var x = (tetromino.center_point.x + 1) * (block_size / 2);
             var y = (tetromino.center_point.y + 1) * (block_size / 2);
 
-            x += tetromino.board_offset.x * block_size;
-            y += tetromino.board_offset.y * block_size;
+            x += tetromino.board_offset.x * block_size + self.pos.x;
+            y += tetromino.board_offset.y * block_size + self.pos.y;
 
             rl.drawCircle(x, y, 4.0, .white);
         }
@@ -58,21 +64,9 @@ pub fn draw(self: *const @This()) void {
 }
 
 pub fn drawBlockAt(self: *const @This(), kind: TetrominoKind, x: i32, y: i32) void {
-    const color: rl.Color = switch (kind) {
-        .nil => return,
-        .O => .yellow,
-        .I => .sky_blue,
-        .S => .red,
-        .Z => .green,
-        .L => .orange,
-        .J => .pink,
-        .T => .purple,
-    };
-
-    const global_x = x * block_size + self.pos.x + outline_width;
-    const global_y = y * block_size + self.pos.y + outline_width;
-    const adjusted_size = block_size - 2 * outline_width;
-    rl.drawRectangle(global_x, global_y, adjusted_size, adjusted_size, color);
+    const global_x = x * block_size + self.pos.x;
+    const global_y = y * block_size + self.pos.y;
+    block.drawAt(kind, global_x, global_y);
 }
 
 pub fn atPos(self: *@This(), x: i32, y: i32) *TetrominoKind {

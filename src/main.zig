@@ -4,6 +4,7 @@ const Io = std.Io;
 const rl = @import("raylib");
 const Game = @import("Game.zig");
 const Board = @import("Board.zig");
+const NextDisplay = @import("NextDisplay.zig");
 
 pub fn main(init: std.process.Init) !void {
     std.debug.print("Welcome to Zig Tetris!", .{});
@@ -11,15 +12,21 @@ pub fn main(init: std.process.Init) !void {
     const rng_impl: std.Random.IoSource = .{ .io = init.io };
     const rng = rng_impl.interface();
 
-    var board: Board = .init(.{ .x = 0, .y = 0 });
-    var game: Game = .init(rng, &board);
+    var board: Board = .init(.{ .x = 32, .y = 128 });
+    var next_display: NextDisplay = .init(.{
+        .x = 400,
+        .y = 128,
+        .width = 196,
+        .height = 196,
+    });
 
-    game.spawnNewTetromino();
+    var game: Game = .init(rng, &board, &next_display);
+    game.startPlaying();
 
     // ---Raylib---
 
-    const screenWidth = 800;
-    const screenHeight = 1000;
+    const screenWidth = 632;
+    const screenHeight = 1000 - 32;
 
     rl.initWindow(screenWidth, screenHeight, "Zig Tetris");
     defer rl.closeWindow();
@@ -39,6 +46,8 @@ pub fn main(init: std.process.Init) !void {
         defer rl.endDrawing();
 
         rl.clearBackground(.black);
+        rl.drawText("Zig Tetris", 240, 32, 32, .white);
         board.draw();
+        next_display.draw();
     }
 }
