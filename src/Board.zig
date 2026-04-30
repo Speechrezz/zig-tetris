@@ -83,9 +83,23 @@ pub fn idxFromPos(x: i32, y: i32) usize {
     return @intCast(x + y * board_width);
 }
 
+pub fn idxFromRow(row: usize) usize {
+    return row * board_width;
+}
+
 pub fn isSolidAt(self: *const @This(), x: i32, y: i32) bool {
     if (x < 0 or x >= board_width) return true;
     if (y < 0 or y >= board_height) return true;
 
     return self.blocks[idxFromPos(x, y)].isSolid();
+}
+
+pub fn isRowFull(self: *const @This(), idx: usize) bool {
+    for (0..board_width) |x| {
+        if (self.blocks[x + idx].isEmpty()) {
+            return false;
+        }
+    }
+
+    return true;
 }
