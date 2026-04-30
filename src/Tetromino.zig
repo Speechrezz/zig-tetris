@@ -54,29 +54,29 @@ pub fn create(kind: Kind) @This() {
         .L => .{
             .block_offsets = .{
                 .{ .x = 0, .y = 1 },
-                .{ .x = 0, .y = 0 },
-                .{ .x = 1, .y = 0 },
+                .{ .x = 1, .y = 1 },
+                .{ .x = 2, .y = 1 },
                 .{ .x = 2, .y = 0 },
             },
-            .center_point = .{ .x = 2, .y = 0 },
+            .center_point = .{ .x = 2, .y = 2 },
         },
         .J => .{
             .block_offsets = .{
                 .{ .x = 0, .y = 0 },
-                .{ .x = 1, .y = 0 },
-                .{ .x = 2, .y = 0 },
+                .{ .x = 0, .y = 1 },
+                .{ .x = 1, .y = 1 },
                 .{ .x = 2, .y = 1 },
             },
-            .center_point = .{ .x = 2, .y = 0 },
+            .center_point = .{ .x = 2, .y = 2 },
         },
         .T => .{
             .block_offsets = .{
-                .{ .x = 0, .y = 0 },
                 .{ .x = 1, .y = 0 },
-                .{ .x = 2, .y = 0 },
+                .{ .x = 0, .y = 1 },
                 .{ .x = 1, .y = 1 },
+                .{ .x = 2, .y = 1 },
             },
-            .center_point = .{ .x = 2, .y = 0 },
+            .center_point = .{ .x = 2, .y = 2 },
         },
     };
 
