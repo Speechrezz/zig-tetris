@@ -59,12 +59,16 @@ pub fn spawnNewTetromino(self: *@This()) void {
     const kind: core.TetrominoKind = @enumFromInt(rand);
     std.debug.print("rand={}, kind={}\n", .{ kind, rand });
 
-    self.board.active_tetromino = .create(kind);
+    var tetromino: Tetromino = .create(kind);
+    // const center_x = @divTrunc(tetromino.center_point.x, 2);
+    tetromino.board_offset.x = @divTrunc(Board.board_width, 2);
 
-    const positions = self.board.active_tetromino.?.computeBoardPositions();
+    const positions = tetromino.computeBoardPositions();
     if (self.hasTetrominoCollided(positions, 0, 0)) {
         std.debug.print("TODO: GAME OVER!\n", .{});
     }
+
+    self.board.active_tetromino = tetromino;
 }
 
 fn tetrominoPlaced(self: *@This()) void {
