@@ -70,8 +70,7 @@ pub fn spawnNewTetromino(self: *@This()) void {
 fn tetrominoPlaced(self: *@This()) void {
     for (0..Board.board_height) |row| {
         const idx = Board.idxFromRow(row);
-        if (self.board.isRowFull(row)) {
-            std.debug.print("Row {} is full!\n", .{row});
+        if (self.board.isRowFull(idx)) {
             const offset = Board.board_width;
             @memmove(self.board.blocks[offset .. idx + offset], self.board.blocks[0..idx]);
         }
@@ -112,6 +111,7 @@ fn moveDown(self: *@This(), tetromino: *Tetromino) void {
             self.board.atPos(pos.x, pos.y).* = tetromino.kind;
         }
 
+        self.tetrominoPlaced();
         return;
     }
 
