@@ -2,6 +2,8 @@ const std = @import("std");
 const Io = std.Io;
 
 const rl = @import("raylib");
+const core = @import("core.zig");
+const drawing = @import("drawing.zig");
 const Game = @import("Game.zig");
 const Board = @import("Board.zig");
 const NextDisplay = @import("NextDisplay.zig");
@@ -25,10 +27,18 @@ pub fn main(init: std.process.Init) !void {
 
     // ---Raylib---
 
-    const screenWidth = 632;
-    const screenHeight = 1000 - 32;
+    const screen_bounds: core.Rectangle = .{ .x = 0, .y = 0, .width = 632, .height = 1000 - 32 };
+    const screen_width = 632;
+    const screen_height = 1000 - 32;
+    const header_bounds: core.Rectangle = .{
+        .x = screen_width / 2 - 200,
+        .y = 32,
+        .width = 400,
+        .height = 32,
+    };
+    const game_over_bounds = screen_bounds.withSizeKeepingCenter(320, 120);
 
-    rl.initWindow(screenWidth, screenHeight, "Zig Tetris");
+    rl.initWindow(screen_width, screen_height, "Zig Tetris");
     defer rl.closeWindow();
 
     const refresh_rate = rl.getMonitorRefreshRate(0);
@@ -46,8 +56,13 @@ pub fn main(init: std.process.Init) !void {
         defer rl.endDrawing();
 
         rl.clearBackground(.black);
-        rl.drawText("Zig Tetris", 240, 32, 32, .white);
+        drawing.drawTextCentered("ZIG TETRIS", header_bounds, 32, .white);
         board.draw();
         next_display.draw();
+
+        if (game.state == .game_over) {
+            rl.drawRectangle(game_over_bounds.x, game_over_bounds.y, game_over_bounds.width, game_over_bounds.height, .black);
+            drawing.drawTextCentered("GAME OVER", game_over_bounds, 40, .red);
+        }
     }
 }

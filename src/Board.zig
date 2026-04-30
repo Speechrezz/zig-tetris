@@ -1,7 +1,7 @@
 const std = @import("std");
 const rl = @import("raylib");
 const core = @import("core.zig");
-const block = @import("block.zig");
+const drawing = @import("drawing.zig");
 const Tetromino = @import("Tetromino.zig");
 
 const Position = core.Position;
@@ -10,10 +10,10 @@ const TetrominoKind = core.TetrominoKind;
 
 pub const board_width = 10;
 pub const board_height = 25;
-pub const block_size = block.size;
+pub const block_size = drawing.block_size;
 pub const block_count = board_width * board_height;
 
-const outline_width = block.outline_width;
+const outline_width = drawing.outline_width;
 const pixel_width = board_width * block_size;
 const pixel_height = board_height * block_size;
 
@@ -66,7 +66,7 @@ pub fn draw(self: *const @This()) void {
 pub fn drawBlockAt(self: *const @This(), kind: TetrominoKind, x: i32, y: i32) void {
     const global_x = x * block_size + self.pos.x;
     const global_y = y * block_size + self.pos.y;
-    block.drawAt(kind, global_x, global_y);
+    drawing.drawBlockAt(kind, global_x, global_y);
 }
 
 pub fn atPos(self: *@This(), x: i32, y: i32) *TetrominoKind {

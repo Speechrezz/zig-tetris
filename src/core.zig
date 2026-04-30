@@ -35,6 +35,15 @@ pub const Rectangle = struct {
     pub fn getCenterY(self: @This()) i32 {
         return self.y + @divTrunc(self.height, 2);
     }
+
+    pub fn withSizeKeepingCenter(self: @This(), width: i32, height: i32) @This() {
+        return .{
+            .x = self.getCenterX() - @divTrunc(width, 2),
+            .y = self.getCenterY() - @divTrunc(height, 2),
+            .width = width,
+            .height = height,
+        };
+    }
 };
 
 pub const TetrominoKind = enum {

@@ -72,6 +72,12 @@ fn handleInput(self: *@This()) void {
             self.moveRight(tetromino);
         }
     }
+
+    if (self.state == .game_over) {
+        if (rl.isKeyPressed(.enter)) {
+            self.startPlaying();
+        }
+    }
 }
 
 fn chooseNextTetromino(self: *const @This()) TetrominoKind {

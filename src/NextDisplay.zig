@@ -1,6 +1,6 @@
 const std = @import("std");
 const rl = @import("raylib");
-const block = @import("block.zig");
+const drawing = @import("drawing.zig");
 const core = @import("core.zig");
 const Tetromino = @import("Tetromino.zig");
 
@@ -23,13 +23,13 @@ pub fn draw(self: *const @This()) void {
         const center_x = self.bounds.getCenterX();
         const center_y = self.bounds.getCenterY();
 
-        const offset_x = center_x - (tetromino.center_point.x + 1) * (block.size / 2);
-        const offset_y = center_y - (tetromino.center_point.y + 1) * (block.size / 2);
+        const offset_x = center_x - (tetromino.center_point.x + 1) * (drawing.block_size / 2);
+        const offset_y = center_y - (tetromino.center_point.y + 1) * (drawing.block_size / 2);
 
         for (tetromino.block_offsets) |offset| {
-            const x = offset_x + offset.x * block.size;
-            const y = offset_y + offset.y * block.size;
-            block.drawAt(tetromino.kind, x, y);
+            const x = offset_x + offset.x * drawing.block_size;
+            const y = offset_y + offset.y * drawing.block_size;
+            drawing.drawBlockAt(tetromino.kind, x, y);
         }
     }
 }
