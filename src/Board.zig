@@ -1,38 +1,81 @@
 const std = @import("std");
 const rl = @import("raylib");
+const core = @import("core.zig");
+const Tetromino = @import("Tetromino.zig");
 
-const ncast = @import("core.zig").ncast;
-const Block = @import("Block.zig");
+const Position = core.Position;
+const ncast = core.ncast;
+const TetrominoKind = core.TetrominoKind;
 
 pub const board_width = 10;
 pub const board_height = 25;
+pub const block_size = 32;
 pub const block_count = board_width * board_height;
-pub const block_size = Block.block_size;
 
 const outline_width = 1;
 const pixel_width = board_width * block_size + 2 * outline_width;
 const pixel_height = board_height * block_size + 2 * outline_width;
 
-blocks: [block_count]Block = [_]Block{.empty} ** block_count,
+pos: Position,
+blocks: [block_count]TetrominoKind = [_]TetrominoKind{.nil} ** block_count,
+active_tetromino: ?Tetromino = null,
 
-pub fn init() @This() {
-    return .{};
+pub fn init(board_pos: Position) @This() {
+    return .{
+        .pos = board_pos,
+    };
 }
 
-pub fn draw(self: *const @This(), x_offset: i32, y_offset: i32) void {
-    rl.drawRectangleLines(x_offset, y_offset, pixel_width, pixel_height, .dark_gray);
+pub fn draw(self: *const @This()) void {
+    rl.drawRectangleLines(self.pos.x, self.pos.y, pixel_width, pixel_height, .dark_gray);
 
     for (0..board_width) |i| {
         for (0..board_height) |j| {
             const idx = i + j * board_width;
-            const x = x_offset + outline_width + ncast(i32, i) * block_size;
-            const y = y_offset + outline_width + ncast(i32, j) * block_size;
-            self.blocks[idx].draw(x, y);
+            const x: i32 = @intCast(i);
+            const y: i32 = @intCast(j);
+            self.drawBlockAt(self.blocks[idx], x, y);
+        }
+    }
+
+    if (self.active_tetromino) |tetromino| {
+        const positions = tetromino.computeBoardPositions();
+        for (positions) |pos| {
+            self.drawBlockAt(tetromino.kind, pos.x, pos.y);
+        }
+
+        // Draw debug rotation point
+        if (true) {
+            var x = (tetromino.center_point.x + 1) * (block_size / 2);
+            var y = (tetromino.center_point.y + 1) * (block_size / 2);
+
+            x += tetromino.board_offset.x * block_size;
+            y += tetromino.board_offset.y * block_size;
+
+            rl.drawCircle(x, y, 4.0, .white);
         }
     }
 }
 
-pub fn atPos(self: *@This(), x: i32, y: i32) *Block {
+pub fn drawBlockAt(self: *const @This(), kind: TetrominoKind, x: i32, y: i32) void {
+    const color: rl.Color = switch (kind) {
+        .nil => return,
+        .O => .yellow,
+        .I => .sky_blue,
+        .S => .red,
+        .Z => .green,
+        .L => .orange,
+        .J => .pink,
+        .T => .purple,
+    };
+
+    const global_x = x * block_size + self.pos.x + outline_width;
+    const global_y = y * block_size + self.pos.y + outline_width;
+    const adjusted_size = block_size - 2 * outline_width;
+    rl.drawRectangle(global_x, global_y, adjusted_size, adjusted_size, color);
+}
+
+pub fn atPos(self: *@This(), x: i32, y: i32) *TetrominoKind {
     return &self.blocks[idxFromPos(x, y)];
 }
 
@@ -40,32 +83,9 @@ pub fn idxFromPos(x: i32, y: i32) usize {
     return @intCast(x + y * board_width);
 }
 
-fn isSolid(self: *const @This(), idx: usize) bool {
-    const block = self.blocks[idx];
-    const is_empty = block.kind == .empty;
-    const is_floating = block.is_floating;
-    return !is_empty and !is_floating;
-}
+pub fn isSolidAt(self: *const @This(), x: i32, y: i32) bool {
+    if (x < 0 or x >= board_width) return true;
+    if (y < 0 or y >= board_height) return true;
 
-pub fn isSolidDown(self: *const @This(), idx: usize) bool {
-    // End of board
-    if (idx >= block_count - board_width) return true;
-
-    return self.isSolid(idx + board_width);
-}
-
-pub fn isSolidLeft(self: *const @This(), idx: usize) bool {
-    // End of board
-    const x = @mod(idx, board_width);
-    if (x == 0) return true;
-
-    return self.isSolid(idx - 1);
-}
-
-pub fn isSolidRight(self: *const @This(), idx: usize) bool {
-    // End of board
-    const x = @mod(idx, board_width);
-    if (x == board_width - 1) return true;
-
-    return self.isSolid(idx + 1);
+    return self.blocks[idxFromPos(x, y)].isSolid();
 }

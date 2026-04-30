@@ -17,3 +17,29 @@ pub fn ncast(comptime T: type, value: anytype) T {
     }
     @compileError("unexpected in_type '" ++ @typeName(@TypeOf(value)) ++ "' and out_type '" ++ @typeName(T) ++ "'");
 }
+
+pub const Position = struct {
+    x: i32 = 0,
+    y: i32 = 0,
+};
+
+pub const TetrominoKind = enum {
+    nil,
+    O,
+    I,
+    S,
+    Z,
+    L,
+    J,
+    T,
+
+    pub fn isEmpty(self: @This()) bool {
+        return self == .nil;
+    }
+
+    pub fn isSolid(self: @This()) bool {
+        return self != .nil;
+    }
+};
+
+pub const TetrominoKinds = 7;

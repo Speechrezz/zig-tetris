@@ -1,19 +1,19 @@
 const std = @import("std");
 const rl = @import("raylib");
+const core = @import("core.zig");
 const Board = @import("Board.zig");
-const Block = @import("Block.zig");
+const Tetromino = @import("Tetromino.zig");
 
-const tetromino_block_count = 4;
-const IndexArray = [tetromino_block_count]usize;
+const fast_drop_period = 0.04;
 
+rng: std.Random,
 board: *Board,
 drop_period: f32 = 1.0, // In seconds
 time_passed: f32 = 0.0, // In seconds
 
-floating_blocks: ?IndexArray = null,
-
-pub fn init(board: *Board) @This() {
+pub fn init(rng: std.Random, board: *Board) @This() {
     return .{
+        .rng = rng,
         .board = board,
     };
 }
@@ -23,90 +23,101 @@ pub fn update(self: *@This(), delta_time: f32) void {
 
     // Move pieces down
     self.time_passed += delta_time;
-    if (self.time_passed >= self.drop_period) {
-        self.time_passed -= self.drop_period;
+    const drop_period = if (rl.isKeyDown(.down)) fast_drop_period else self.drop_period;
 
-        if (self.floating_blocks) |*floating_blocks| {
-            self.moveDown(floating_blocks);
+    if (rl.isKeyPressed(.down)) {
+        self.time_passed = fast_drop_period;
+    }
+
+    if (self.time_passed >= drop_period) {
+        self.time_passed -= drop_period;
+
+        if (self.board.active_tetromino) |*active_tetromino| {
+            self.moveDown(active_tetromino);
         }
     }
 }
 
 fn handleInput(self: *@This()) void {
-    if (self.floating_blocks) |*blocks| {
-        if (rl.isKeyPressed(.left)) {
-            self.moveLeft(blocks);
+    if (self.board.active_tetromino) |*tetromino| {
+        if (rl.isKeyPressed(.up)) {
+            self.rotateClockwise(tetromino);
         }
+
+        if (rl.isKeyPressed(.left)) {
+            self.moveLeft(tetromino);
+        }
+
         if (rl.isKeyPressed(.right)) {
-            self.moveRight(blocks);
+            self.moveRight(tetromino);
         }
     }
 }
 
-fn moveDown(self: *@This(), blocks: *IndexArray) void {
+pub fn spawnNewTetromino(self: *@This()) void {
+    const rand = self.rng.intRangeLessThan(i32, 1, core.TetrominoKinds);
+    const kind: core.TetrominoKind = @enumFromInt(rand);
+    std.debug.print("rand={}, kind={}\n", .{ kind, rand });
+
+    self.board.active_tetromino = .create(kind);
+
+    const positions = self.board.active_tetromino.?.computeBoardPositions();
+    if (self.hasTetrominoCollided(positions, 0, 0)) {
+        std.debug.print("TODO: GAME OVER!\n", .{});
+    }
+}
+
+fn hasTetrominoCollided(self: *@This(), positions: Tetromino.Positions, x_offset: i32, y_offset: i32) bool {
     var has_collided = false;
-    for (blocks) |idx| {
-        has_collided = has_collided or self.board.isSolidDown(idx);
+
+    for (positions) |pos| {
+        const x = pos.x + x_offset;
+        const y = pos.y + y_offset;
+        has_collided = has_collided or self.board.isSolidAt(x, y);
     }
 
-    if (has_collided) {
-        self.floating_blocks = null;
-        for (blocks) |idx| {
-            self.board.blocks[idx].is_floating = false;
-        }
+    return has_collided;
+}
 
-        std.debug.print("[moveDown] TODO: has stopped\n", .{});
+fn rotateClockwise(self: *@This(), tetromino: *Tetromino) void {
+    const rotated = tetromino.rotateClockwise();
+
+    const positions = rotated.computeBoardPositions();
+    if (self.hasTetrominoCollided(positions, 0, 0)) {
+        // TODO: try wall-kick
         return;
     }
 
-    const temp_block = self.board.blocks[self.floating_blocks.?[0]];
-
-    for (blocks) |idx| {
-        self.board.blocks[idx] = .empty;
-    }
-
-    for (blocks) |*idx| {
-        idx.* += Board.board_width;
-        self.board.blocks[idx.*] = temp_block;
-    }
+    tetromino.* = rotated;
 }
 
-fn moveLeft(self: *@This(), blocks: *IndexArray) void {
-    var has_collided = false;
-    for (blocks) |idx| {
-        has_collided = has_collided or self.board.isSolidLeft(idx);
+fn moveDown(self: *@This(), tetromino: *Tetromino) void {
+    const positions = tetromino.computeBoardPositions();
+
+    if (self.hasTetrominoCollided(positions, 0, 1)) {
+        for (positions) |pos| {
+            self.board.atPos(pos.x, pos.y).* = tetromino.kind;
+        }
+
+        std.debug.print("[moveDown] TODO: has stopped\n", .{});
+        self.board.active_tetromino = null;
+        self.spawnNewTetromino();
+        return;
     }
 
-    if (has_collided) return;
-
-    const temp_block = self.board.blocks[self.floating_blocks.?[0]];
-
-    for (blocks) |idx| {
-        self.board.blocks[idx] = .empty;
-    }
-
-    for (blocks) |*idx| {
-        idx.* -= 1;
-        self.board.blocks[idx.*] = temp_block;
-    }
+    tetromino.board_offset.y += 1;
 }
 
-fn moveRight(self: *@This(), blocks: *IndexArray) void {
-    var has_collided = false;
-    for (blocks) |idx| {
-        has_collided = has_collided or self.board.isSolidRight(idx);
-    }
+fn moveLeft(self: *@This(), tetromino: *Tetromino) void {
+    const positions = tetromino.computeBoardPositions();
+    if (self.hasTetrominoCollided(positions, -1, 0)) return;
 
-    if (has_collided) return;
+    tetromino.board_offset.x -= 1;
+}
 
-    const temp_block = self.board.blocks[self.floating_blocks.?[0]];
+fn moveRight(self: *@This(), tetromino: *Tetromino) void {
+    const positions = tetromino.computeBoardPositions();
+    if (self.hasTetrominoCollided(positions, 1, 0)) return;
 
-    for (blocks) |idx| {
-        self.board.blocks[idx] = .empty;
-    }
-
-    for (blocks) |*idx| {
-        idx.* += 1;
-        self.board.blocks[idx.*] = temp_block;
-    }
+    tetromino.board_offset.x += 1;
 }

@@ -6,28 +6,15 @@ const Game = @import("Game.zig");
 const Board = @import("Board.zig");
 
 pub fn main(init: std.process.Init) !void {
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    std.debug.print("Welcome to Zig Tetris!", .{});
 
-    // In order to do I/O operations need an `Io` instance.
-    const io = init.io;
-    _ = io;
+    const rng_impl: std.Random.IoSource = .{ .io = init.io };
+    const rng = rng_impl.interface();
 
-    var board: Board = .init();
-    var game: Game = .init(&board);
+    var board: Board = .init(.{ .x = 0, .y = 0 });
+    var game: Game = .init(rng, &board);
 
-    board.atPos(0, 20).* = .{ .kind = .I };
-
-    game.floating_blocks = [_]usize{undefined} ** 4;
-    game.floating_blocks = .{
-        Board.idxFromPos(1, 10),
-        Board.idxFromPos(2, 10),
-        Board.idxFromPos(1, 11),
-        Board.idxFromPos(2, 11),
-    };
-
-    for (game.floating_blocks.?) |idx| {
-        board.blocks[idx] = .{ .kind = .O, .is_floating = true };
-    }
+    game.spawnNewTetromino();
 
     // ---Raylib---
 
@@ -52,6 +39,6 @@ pub fn main(init: std.process.Init) !void {
         defer rl.endDrawing();
 
         rl.clearBackground(.black);
-        board.draw(0, 0);
+        board.draw();
     }
 }
