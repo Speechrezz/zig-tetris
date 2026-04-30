@@ -51,7 +51,7 @@ pub fn draw(self: *const @This()) void {
         }
 
         // Draw debug rotation point
-        if (true) {
+        if (false) {
             var x = (tetromino.center_point.x + 1) * (block_size / 2);
             var y = (tetromino.center_point.y + 1) * (block_size / 2);
 
