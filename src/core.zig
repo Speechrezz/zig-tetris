@@ -39,6 +39,13 @@ pub const Rectangle = struct {
         return removed;
     }
 
+    pub fn translated(self: @This(), x: i32, y: i32) @This() {
+        var new = self;
+        new.x += x;
+        new.y += y;
+        return new;
+    }
+
     pub fn getCenterX(self: @This()) i32 {
         return self.x + @divTrunc(self.width, 2);
     }

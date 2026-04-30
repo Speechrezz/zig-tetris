@@ -43,7 +43,7 @@ pub fn main(init: std.process.Init) !void {
         .width = 400,
         .height = 32,
     };
-    const game_over_bounds = screen_bounds.withSizeKeepingCenter(320, 120);
+    const game_over_bounds = screen_bounds.withSizeKeepingCenter(320, 120).translated(0, -128);
 
     rl.initWindow(screen_width, screen_height, "Zig Tetris");
     defer rl.closeWindow();
