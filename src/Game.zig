@@ -81,7 +81,7 @@ fn handleInput(self: *@This()) void {
 }
 
 fn chooseNextTetromino(self: *const @This()) TetrominoKind {
-    const rand = self.rng.intRangeLessThan(i32, 1, core.TetrominoKinds);
+    const rand = self.rng.intRangeAtMost(i32, 1, core.TetrominoKinds);
     return @enumFromInt(rand);
 }
 

@@ -11,11 +11,11 @@ pub fn drawBlockAt(kind: TetrominoKind, x: i32, y: i32) void {
         .nil => return,
         .O => .yellow,
         .I => .sky_blue,
-        .S => .red,
-        .Z => .green,
+        .S => .green,
+        .Z => .red,
         .L => .orange,
-        .J => .pink,
-        .T => .purple,
+        .J => .dark_blue,
+        .T => .magenta,
     };
 
     const adjusted_x = x + outline_width;
