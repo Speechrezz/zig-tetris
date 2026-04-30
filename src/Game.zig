@@ -4,6 +4,7 @@ const core = @import("core.zig");
 const Board = @import("Board.zig");
 const Tetromino = @import("Tetromino.zig");
 const NextDisplay = @import("NextDisplay.zig");
+const SevenBag = @import("SevenBag.zig");
 
 const TetrominoKind = core.TetrominoKind;
 const GameState = enum {
@@ -17,7 +18,7 @@ const fast_drop_period = 0.04;
 
 state: GameState = .playing,
 
-rng: std.Random,
+seven_bag: SevenBag,
 board: *Board,
 next_display: *NextDisplay,
 drop_period: f32 = 1.0, // In seconds
@@ -25,7 +26,7 @@ time_passed: f32 = 0.0, // In seconds
 
 pub fn init(rng: std.Random, board: *Board, next_display: *NextDisplay) @This() {
     return .{
-        .rng = rng,
+        .seven_bag = .{ .rng = rng },
         .board = board,
         .next_display = next_display,
     };
@@ -80,8 +81,8 @@ fn handleInput(self: *@This()) void {
     }
 }
 
-fn chooseNextTetromino(self: *const @This()) TetrominoKind {
-    const rand = self.rng.intRangeAtMost(i32, 1, core.TetrominoKinds);
+fn chooseNextTetromino(self: *@This()) TetrominoKind {
+    const rand = self.seven_bag.getNext() + 1;
     return @enumFromInt(rand);
 }
 

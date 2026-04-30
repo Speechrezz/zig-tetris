@@ -13,4 +13,5 @@ Run `zig build run`.
 - Proper game-over screen ✅
 - Scoring
 - Difficulty scaling
-- 7-bag random for choosing tetrominos
+- 7-bag random for choosing tetrominos ✅
+- Sound
