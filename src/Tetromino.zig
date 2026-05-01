@@ -8,6 +8,7 @@ pub const block_count = 4;
 pub const Positions = [block_count]Position;
 
 kind: Kind = .nil,
+rotation_idx: u8 = 0,
 block_offsets: Positions = undefined,
 board_offset: Position = .{},
 center_point: Position = .{}, // 2 units per block
@@ -116,5 +117,31 @@ pub fn rotateClockwise(self: @This()) @This() {
         offset.y = @divTrunc(offset.y, 2);
     }
 
+    rotated.rotation_idx = @mod(rotated.rotation_idx + 1, 4);
+    return rotated;
+}
+
+pub fn rotateCounterClockwise(self: @This()) @This() {
+    var rotated = self;
+
+    for (&rotated.block_offsets) |*offset| {
+        offset.x *= 2;
+        offset.y *= 2;
+
+        offset.x -= self.center_point.x;
+        offset.y -= self.center_point.y;
+
+        const x_temp = offset.x;
+        offset.x = offset.y;
+        offset.y = -x_temp;
+
+        offset.x += self.center_point.x;
+        offset.y += self.center_point.y;
+
+        offset.x = @divTrunc(offset.x, 2);
+        offset.y = @divTrunc(offset.y, 2);
+    }
+
+    rotated.rotation_idx = @mod(rotated.rotation_idx + 3, 4);
     return rotated;
 }

@@ -6,6 +6,7 @@ const Tetromino = @import("Tetromino.zig");
 const NextDisplay = @import("NextDisplay.zig");
 const ScoreDisplay = @import("ScoreDisplay.zig");
 const SevenBag = @import("SevenBag.zig");
+const wall_kick = @import("wall_kick.zig");
 
 const TetrominoKind = core.TetrominoKind;
 const GameState = enum {
@@ -77,8 +78,11 @@ pub fn update(self: *@This(), delta_time: f32) void {
 
 fn handleInput(self: *@This()) void {
     if (self.board.active_tetromino) |*tetromino| {
-        if (rl.isKeyPressed(.up)) {
+        if (rl.isKeyPressed(.up) or rl.isKeyPressed(.x)) {
             self.rotateClockwise(tetromino);
+        }
+        if (rl.isKeyPressed(.z)) {
+            self.rotateCounterClockwise(tetromino);
         }
 
         if (rl.isKeyPressed(.left)) {
@@ -178,16 +182,45 @@ fn hasTetrominoCollided(self: *@This(), positions: Tetromino.Positions, x_offset
     return has_collided;
 }
 
-fn rotateClockwise(self: *@This(), tetromino: *Tetromino) void {
-    const rotated = tetromino.rotateClockwise();
+fn tryRotate(self: *@This(), before: *Tetromino, after: *Tetromino) bool {
+    const positions = after.computeBoardPositions();
 
-    const positions = rotated.computeBoardPositions();
-    if (self.hasTetrominoCollided(positions, 0, 0)) {
-        // TODO: try wall-kick
-        return;
+    if (!self.hasTetrominoCollided(positions, 0, 0)) {
+        return true;
     }
 
-    tetromino.* = rotated;
+    const wall_kick_ctx: wall_kick.Context = .{
+        .kind = before.kind,
+        .rotation_start = before.rotation_idx,
+        .rotation_end = after.rotation_idx,
+    };
+    const wall_kicks = wall_kick.getOffsets(wall_kick_ctx);
+
+    for (wall_kicks) |offset| {
+        if (!self.hasTetrominoCollided(positions, offset.x, -offset.y)) {
+            after.board_offset.x += offset.x;
+            after.board_offset.y -= offset.y;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+fn rotateClockwise(self: *@This(), tetromino: *Tetromino) void {
+    var rotated = tetromino.rotateClockwise();
+
+    if (self.tryRotate(tetromino, &rotated)) {
+        tetromino.* = rotated;
+    }
+}
+
+fn rotateCounterClockwise(self: *@This(), tetromino: *Tetromino) void {
+    var rotated = tetromino.rotateCounterClockwise();
+
+    if (self.tryRotate(tetromino, &rotated)) {
+        tetromino.* = rotated;
+    }
 }
 
 fn moveDown(self: *@This(), tetromino: *Tetromino) void {

@@ -9,9 +9,10 @@ Run `zig build run`.
 ## TODO
 
 - Next tetromino display ✅
-- Wall-kicking
+- Wall-kicking ✅
 - Proper game-over screen ✅
 - Scoring ✅
+- T-spin scoring
 - Difficulty scaling ✅
 - 7-bag random for choosing tetrominos ✅
 - Sound
